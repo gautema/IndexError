@@ -26,14 +26,14 @@ namespace IndexError
         public void IndexesShouldIncrease()
         {
             var personcount = 0;
-            for (int i = 0; i < 2400; i++)
+            for (var i = 0; i < 1500; i++)
             {
                 using(var session = _store.OpenSession())
                 {
                     session.Store(new Person { Created = DateTime.Now });
                     session.SaveChanges();
                 }
-                Thread.Sleep(20);
+                Thread.Sleep(5);
                 using (var session = _store.OpenSession())
                 {
                     var result = session.Query<PersonCount>(typeof (PersonCountReport).Name).OrderByDescending(c => c.Date).FirstOrDefault();
@@ -43,7 +43,13 @@ namespace IndexError
                     personcount = result.Count;
                 }
             }
-            
+
+            using (var session = _store.OpenSession())
+            {
+                var personsToday = session.Query<PersonCount>(typeof(PersonCountReport).Name).Customize(x => x.WaitForNonStaleResultsAsOfNow()).OrderByDescending(c => c.Date).First().Count;
+                var persons = session.Query<Person>().Count();
+                Assert.That(personsToday, Is.EqualTo(persons));
+            }
         }
     }
 
